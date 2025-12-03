@@ -8,7 +8,7 @@ t  <- 342.63          # Likelihood precision
 T0 <- 12              # Prior strength
 m0 <- 0.00328         # Prior mean
 to <- T0 * t          # Prior precision
-J  <- 100000            # Monte Carlo simulations
+J  <- 100000          # Monte Carlo simulations
 
 # Get SPY data
 getSymbols("SPY", from = "2018-01-01", to = "2022-12-31", periodicity = "monthly")
@@ -25,7 +25,7 @@ mu_N  <- (to * m0 + t * N * r_hat) / tau_N
 # Predictive Distribution Calculation
 pred_sd <- sqrt(1/t + 1/tau_N)
 
-# Monte Carlo Simulation
+# Monte Carlo Simulation antithetic
 r_half <- rnorm(J / 2, mean = mu_N, sd = pred_sd) 
 r_anti <- 2 * mu_N - r_half
 r_pred <- c(r_half, r_anti)
@@ -34,23 +34,20 @@ r_pred <- c(r_half, r_anti)
 # --- 2. Plotting Setup ---
 
 # Grid of weights to test
-w_grid <- seq(0, 1, length.out = 100)
+w_grid <- seq(0, 1, length.out = 100) # i will try tomorrow to find the integral
+
 # Gamma values to loop through
 gammas <- c(2, 4, 6, 8)
 
-# Set up the plotting area: 2 rows, 2 columns
+# Set up the plotting area 2 rows and 2 columns
 par(mfrow = c(2, 2)) 
-# Adjust margins slightly to make room for titles/labels
-par(mar = c(4, 4.5, 3, 1))
 
-# --- 3. Loop and Plot (Base R) ---
+# For each Gamma find the maxCER and plot
 
 for (g in gammas) {
+  cer_values <- numeric(100)
   
-  # A. Calculate CER for this Gamma
-  cer_values <- numeric(length(w_grid))
-  
-  for (i in 1:length(w_grid)) {
+  for (i in 1:100) {
     w <- w_grid[i]
     
     # Portfolio gross return component: (w * e^r + (1-w))
@@ -86,13 +83,6 @@ for (g in gammas) {
   # Add the black dot at the maximum
   points(opt_w, opt_val, pch = 19, col = "black", cex = 1.2)
   
-  # Add the Title with Greek letters
-  # bquote allows us to mix variables (.(g)) with math symbols
+  # added the title
   title(main = bquote(gamma == .(g) ~ ", optimal weight " ~ w^"*" == .(sprintf("%.2f", opt_w))))
-  
-  # Add a grid (optional, but matches the style of many academic plots)
-  grid()
 }
-
-# Reset plotting parameters to default
-par(mfrow = c(1, 1))
